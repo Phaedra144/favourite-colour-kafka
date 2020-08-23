@@ -27,7 +27,9 @@ public class FavouriteColourApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         Properties config = new Properties();
-        config.put(StreamsConfig.APPLICATION_ID_CONFIG, "favourite-colour-{team-name}");
+        //Task 0: Assign your team name to "teamName" variable
+        String teamName = "";
+        config.put(StreamsConfig.APPLICATION_ID_CONFIG, String.format("favourite-colour-%s", teamName));
         config.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "willy:9292");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         config.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.AT_LEAST_ONCE);
