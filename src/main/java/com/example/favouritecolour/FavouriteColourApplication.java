@@ -67,7 +67,7 @@ public class FavouriteColourApplication implements CommandLineRunner {
 
                     // 1 - group by colour within the KTable
 
-                    // 2 - count colours that are grouped
+                    // 2 - count colours that are grouped, map the values to string to make the visualization good
 
                     // 3 - output the results to a Kafka topic {teamname}-favourite-colour-output - don't forget the serializers
 
