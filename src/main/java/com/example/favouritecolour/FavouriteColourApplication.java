@@ -40,7 +40,7 @@ public class FavouriteColourApplication implements CommandLineRunner {
 
         StreamsBuilder builder = new StreamsBuilder();
 
-        //Task 1: send filtered colours as "name" key and "colour" value in KStream to topic: {team-name}-filtered-colours
+        //Task 1: send filtered colours as "name" key and "colour" value in KStream to topic: {teamname}-filtered-colours
 
             // 1 - create Kstream based on the input topic "favourite-colour-input"
 
@@ -55,12 +55,12 @@ public class FavouriteColourApplication implements CommandLineRunner {
 
             // 6 - filter undesired colours (only green, purple and yellow colours should be sent)
 
-            // 7 - send filtered kstream to {team-name}-filtered-colours topic, don't forget the serializers
+            // 7 - send filtered kstream to {teamname}-filtered-colours topic, don't forget the serializers
 
 
-        //Task 2: count the filtered colours and send them to topic {team-name}-favourite-colour-output
+        //Task 2: count the filtered colours and send them to topic {teamname}-favourite-colour-output
 
-            // Step 1 - read that {team-name}-filtered-colours topic as a KTable so that updates are read correctly
+            // Step 1 - read that {teamname}-filtered-colours topic as a KTable so that updates are read correctly
 
 
             // Step 2 - count the occurrences of colours
@@ -69,7 +69,7 @@ public class FavouriteColourApplication implements CommandLineRunner {
 
                     // 2 - count colours that are grouped
 
-                    // 3 - output the results to a Kafka topic {team-name}-favourite-colour-output - don't forget the serializers
+                    // 3 - output the results to a Kafka topic {teamname}-favourite-colour-output - don't forget the serializers
 
 
 
