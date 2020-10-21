@@ -2,13 +2,15 @@ package com.example.favouritecolour;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.protocol.types.Field;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -40,38 +42,39 @@ public class FavouriteColourApplication implements CommandLineRunner {
 
         StreamsBuilder builder = new StreamsBuilder();
 
-        //Task 1: send filtered colours as "name" key and "colour" value in KStream to topic: {teamname}-filtered-colours
+        //Task 1: send filtered colours as "name" key and "colour" value in KStream to topic: {team-name}-filtered-colours
 
-            // 1 - create Kstream based on the input topic "favourite-colour-input"
+        // Step 1 - create Kstream based on the input topic "favourite-colour-input"
+        KStream<String, String> textLines = builder.stream("favourite-colour-input");
+        KStream<String, String> usersAndColours = textLines
+                // 1 - make sure that a comma is contained in the value as we will split on it
+                .filter((key, value) -> value.contains(","))
+                // 2 - select a key that will be the user name (lowercase for safety)
+                .selectKey((key, value) -> value.split(",")[0].toLowerCase())
+                // 3 - get the colour from the value (lowercase for safety)
+                .mapValues(value -> value.split(",")[1].toLowerCase())
+                // 4 - log out what key and value you have so far
+                .peek((key, value) -> log.info("Key: " + key + " Value: " + value))
+                // 5 - filter undesired colours (only green, purple and yellow colours should be sent)
+                .filter((user, colour) -> Arrays.asList("green", "purple", "yellow").contains(colour));
+        // 6 - send filtered kstream to {team-name}-filtered-colours topic, don't forget the serializers
+        usersAndColours.to("filtered-colours", Produced.with(Serdes.String(), Serdes.String()));
 
+        //Task 2: count the filtered colours and send them to topic {team-name}-favourite-colour-output
 
-            // 2 - make sure that a comma is contained in the value as we will split on it
+        // Step 1 - read that {team-name}-filtered-colours topic as a KTable so that updates are read correctly
+        KTable<String, String> usersAndColoursTable = builder.table("filtered-colours");
 
-            // 3 - select a key that will be the user name (lowercase for safety)
+        // Step 2 - count the occurrences of colours
+        KTable<String, String> favouriteColours = usersAndColoursTable
+                // 1 - group by colour within the KTable
+                .groupBy((user, colour) -> new KeyValue<>(colour, colour))
+                // 2 - count colours that are grouped
+                .count(Materialized.as("count-store"))
+                .mapValues((key, value) -> String.valueOf(value));
 
-            // 4 - get the colour from the value (lowercase for safety)
-
-            // 5 - log out what key and value you have so far
-
-            // 6 - filter undesired colours (only green, purple and yellow colours should be sent)
-
-            // 7 - send filtered kstream to {teamname}-filtered-colours topic, don't forget the serializers
-
-
-        //Task 2: count the filtered colours and send them to topic {teamname}-favourite-colour-output
-
-            // Step 1 - read that {teamname}-filtered-colours topic as a KTable so that updates are read correctly
-
-
-            // Step 2 - count the occurrences of colours
-
-                    // 1 - group by colour within the KTable
-
-                    // 2 - count colours that are grouped, map the values to string to make the visualization good
-
-                    // 3 - output the results to a Kafka topic {teamname}-favourite-colour-output - don't forget the serializers
-
-
+        // 3 - output the results to a Kafka topic {team-name}-favourite-colour-output - don't forget the serializers
+        favouriteColours.toStream().peek((key, value) -> System.out.println("Table key: " + key + " table value: " + value)).selectKey((key, value) -> key).to("favourite-colour-output", Produced.with(Serdes.String(), Serdes.String()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), config);
         // only do this in dev - not in prod
